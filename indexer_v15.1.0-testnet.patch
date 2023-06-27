@@ -1,0 +1,257 @@
+diff --git a/app/keepers/keepers.go b/app/keepers/keepers.go
+index 6613fb8c1..76dd36a11 100644
+--- a/app/keepers/keepers.go
++++ b/app/keepers/keepers.go
+@@ -1,6 +1,8 @@
+ package keepers
+ 
+ import (
++	"path/filepath"
++
+ 	"github.com/CosmWasm/wasmd/x/wasm"
+ 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+ 	"github.com/cosmos/cosmos-sdk/baseapp"
+@@ -193,12 +195,15 @@ func (appKeepers *AppKeepers) InitNormalKeepers(
+ 	)
+ 	appKeepers.AuthzKeeper = &authzKeeper
+ 
++	homePath := filepath.Join(wasmDir, "..")
++
+ 	stakingKeeper := stakingkeeper.NewKeeper(
+ 		appCodec,
+ 		appKeepers.keys[stakingtypes.StoreKey],
+ 		appKeepers.AccountKeeper,
+ 		appKeepers.BankKeeper,
+ 		appKeepers.GetSubspace(stakingtypes.ModuleName),
++		homePath,
+ 	)
+ 	appKeepers.StakingKeeper = &stakingKeeper
+ 
+diff --git a/go.mod b/go.mod
+index e9e9c3680..0ca395d51 100644
+--- a/go.mod
++++ b/go.mod
+@@ -309,13 +309,13 @@ require (
+ replace (
+ 	// osmosis-patched wasmd
+ 	// ToDo: replace the commit hash with v0.30.0-osmo-v14 once the version is tagged
+-	github.com/CosmWasm/wasmd => github.com/osmosis-labs/wasmd v0.30.0-osmo-v15
++	// github.com/CosmWasm/wasmd => github.com/osmosis-labs/wasmd v0.30.0-osmo-v15
+ 	// Security patch for wasmvm. See https://github.com/CosmWasm/advisories/blob/main/CWAs/CWA-2023-002.md
+ 	github.com/CosmWasm/wasmvm => github.com/CosmWasm/wasmvm v1.1.2
+ 	// dragonberry
+ 	github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
+ 	// Our cosmos-sdk branch is:  https://github.com/osmosis-labs/cosmos-sdk, current branch: nicolas/backport-cachekv-v15. Direct commit link: https://github.com/osmosis-labs/cosmos-sdk/pull/436/commits/a412f86ebe33f45b6f6350ddf721be834b9b7535
+-	github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
++	// github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
+ 	// use cosmos-compatible protobufs
+ 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+ 	// Informal Tendermint fork
+@@ -323,3 +323,9 @@ replace (
+ 	// use grpc compatible with cosmos protobufs
+ 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
+ )
++
++// INDEXER
++replace (
++	github.com/CosmWasm/wasmd => github.com/NoahSaso/wasmd v0.30.0-osmo-v15-osmosis-labs-indexer.8
++	github.com/cosmos/cosmos-sdk => github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4
++)
+diff --git a/go.sum b/go.sum
+index 14879a80c..8bc807b95 100644
+--- a/go.sum
++++ b/go.sum
+@@ -86,6 +86,10 @@ github.com/Masterminds/semver v1.5.0 h1:H65muMkzWKEuNDnfl9d70GUjFniHKHRbFPGBuZ3Q
+ github.com/Masterminds/semver v1.5.0/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF078ddwwvV3Y=
+ github.com/Microsoft/go-winio v0.6.0 h1:slsWYD/zyx7lCXoZVlvQrj0hPTM1HI4+v1sIda2yDvg=
+ github.com/Microsoft/go-winio v0.6.0/go.mod h1:cTAf44im0RAYeL23bpB+fzCyDH2MJiz2BO69KH/soAE=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4 h1:T0044sYBuX4aIzcUjU9jYOzHHNsKrE48LDw/cft4wjA=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
++github.com/NoahSaso/wasmd v0.30.0-osmo-v15-osmosis-labs-indexer.8 h1:akX8EcKj3/QmGr9Z4zRFeIOdN5pJO2iXsWPU3jLrpC8=
++github.com/NoahSaso/wasmd v0.30.0-osmo-v15-osmosis-labs-indexer.8/go.mod h1:B1xqYwuCMHiiIRPGrvDVAM7ZZskVaS5rVCAmDhgs1r0=
+ github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 h1:TngWCqHvy9oXAN6lEVMRuU21PR1EtLVZJmdB18Gu3Rw=
+ github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5/go.mod h1:lmUJ/7eu/Q8D7ML55dXQrVaamCz2vxCfdQBasLZfHKk=
+ github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
+@@ -858,8 +862,6 @@ github.com/openzipkin/zipkin-go v0.2.2/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnh
+ github.com/ory/dockertest v3.3.5+incompatible h1:iLLK6SQwIhcbrG783Dghaaa3WPzGc+4Emza6EbVUUGA=
+ github.com/ory/dockertest/v3 v3.9.1 h1:v4dkG+dlu76goxMiTT2j8zV7s4oPPEppKT8K8p2f1kY=
+ github.com/ory/dockertest/v3 v3.9.1/go.mod h1:42Ir9hmvaAPm0Mgibk6mBPi7SFvTXxEcnztDYOJ//uM=
+-github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33 h1:0zSPDwqS+32sI/LNDhWlgyPR5KqOhS8ljkMblmwiU5w=
+-github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
+ github.com/osmosis-labs/go-mutesting v0.0.0-20221208041716-b43bcd97b3b3 h1:YlmchqTmlwdWSmrRmXKR+PcU96ntOd8u10vTaTZdcNY=
+ github.com/osmosis-labs/go-mutesting v0.0.0-20221208041716-b43bcd97b3b3/go.mod h1:lV6KnqXYD/ayTe7310MHtM3I2q8Z6bBfMAi+bhwPYtI=
+ github.com/osmosis-labs/osmosis/osmomath v0.0.4 h1:5cJfDi8mOuAzLfsQFoTGJvm/qca7Gj7wvDiVSTE1ibk=
+@@ -868,8 +870,6 @@ github.com/osmosis-labs/osmosis/osmoutils v0.0.4 h1:W/lvzFsyt30GGi0+nD3Ktxlwe5Tl
+ github.com/osmosis-labs/osmosis/osmoutils v0.0.4/go.mod h1:2MStAdC2TajbhgkAwT3SZPtMW/Bbvp0JYGPRle+5Qsc=
+ github.com/osmosis-labs/osmosis/x/ibc-hooks v0.0.6 h1:PjfLL5rwwm44CeLnNQssrFgmj4BdeIS5DriKYhGz7IM=
+ github.com/osmosis-labs/osmosis/x/ibc-hooks v0.0.6/go.mod h1:2Aqs0L6JnMfo+P+It8q7hJsP1YB+Is5DJc4nRSiBF/U=
+-github.com/osmosis-labs/wasmd v0.30.0-osmo-v15 h1:vjbzq9ta/KmQwUM6PcRmrBJuDwILgLbV4POypC1Uhn8=
+-github.com/osmosis-labs/wasmd v0.30.0-osmo-v15/go.mod h1:5fDYJyMXBq6u2iuHqqOTYiZ5NitIOeIW5k7qEXqbwJE=
+ github.com/otiai10/copy v1.2.0/go.mod h1:rrF5dJ5F0t/EWSYODDu4j9/vEeYHMkc8jt0zJChqQWw=
+ github.com/otiai10/copy v1.7.0 h1:hVoPiN+t+7d2nzzwMiDHPSOogsWAStewq3TwU05+clE=
+ github.com/otiai10/curr v0.0.0-20150429015615-9b4961190c95/go.mod h1:9qAhocn7zKJG+0mI8eUu6xqkFDYS2kb2saOteoSB3cE=
+diff --git a/go.work.sum b/go.work.sum
+index 7ad6fbeae..6445483cc 100644
+--- a/go.work.sum
++++ b/go.work.sum
+@@ -497,6 +497,10 @@ github.com/Microsoft/hcsshim/test v0.0.0-20201218223536-d3e5debf77da/go.mod h1:5
+ github.com/Microsoft/hcsshim/test v0.0.0-20210227013316-43a75bb4edd3/go.mod h1:mw7qgWloBUl75W/gVH3cQszUg1+gUITj7D6NY7ywVnY=
+ github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46/go.mod h1:3wb06e3pkSAbeQ52E9H9iFoQsEEwGN64994WTCIhntQ=
+ github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4 h1:T0044sYBuX4aIzcUjU9jYOzHHNsKrE48LDw/cft4wjA=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
++github.com/NoahSaso/wasmd v0.30.0-osmo-v15-osmosis-labs-indexer.8 h1:akX8EcKj3/QmGr9Z4zRFeIOdN5pJO2iXsWPU3jLrpC8=
++github.com/NoahSaso/wasmd v0.30.0-osmo-v15-osmosis-labs-indexer.8/go.mod h1:B1xqYwuCMHiiIRPGrvDVAM7ZZskVaS5rVCAmDhgs1r0=
+ github.com/OpenPeeDeeP/depguard v1.0.1/go.mod h1:xsIw86fROiiwelg+jB2uM9PiKihMMmUx/1V+TNhjQvM=
+ github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
+ github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
+@@ -594,7 +598,6 @@ github.com/bshuster-repo/logrus-logstash-hook v0.4.1/go.mod h1:zsTqEiSzDgAa/8GZR
+ github.com/btcsuite/btcd v0.0.0-20190115013929-ed77733ec07d/go.mod h1:d3C0AkH6BRcvO8T0UEPu53cnw4IbV63x1bEjildYhO0=
+ github.com/btcsuite/btcd v0.22.0-beta/go.mod h1:9n5ntfhhHQBIhUvlhDvD3Qg6fRUj4jkN0VB8L8svzOA=
+ github.com/btcsuite/btcd v0.22.1/go.mod h1:wqgTSL29+50LRkmOVknEdmt8ZojIzhuWvgu/iptuN7Y=
+-github.com/btcsuite/btcd v0.22.3/go.mod h1:wqgTSL29+50LRkmOVknEdmt8ZojIzhuWvgu/iptuN7Y=
+ github.com/btcsuite/btcd/btcec/v2 v2.3.2/go.mod h1:zYzJ8etWJQIv1Ogk7OzpWjowwOdXY1W/17j2MW85J04=
+ github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1/go.mod h1:7SFka0XMvUgj3hfZtydOrQY2mwhPclbT2snogU7SQQc=
+ github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f h1:bAs4lUbRJpnnkd9VhRV3jjAVU7DJVjMaK+IsvSeZvFo=
+@@ -1490,7 +1493,6 @@ github.com/openzipkin/zipkin-go v0.1.3/go.mod h1:NtoC/o8u3JlF1lSlyPNswIbeQH9bJTm
+ github.com/openzipkin/zipkin-go v0.2.5 h1:UwtQQx2pyPIgWYHRg+epgdx1/HnBQTgN3/oIYEJTQzU=
+ github.com/openzipkin/zipkin-go v0.2.5/go.mod h1:KpXfKdgRDnnhsxw4pNIH9Md5lyFqKUa4YDFlwRYAMyE=
+ github.com/ory/dockertest v3.3.5+incompatible/go.mod h1:1vX4m9wsvi00u5bseYwXaSnhNrne+V0E6LAcBILJdPs=
+-github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
+ github.com/otiai10/curr v1.0.0 h1:TJIWdbX0B+kpNagQrjgq8bCMrbhiuX73M2XwgtDMoOI=
+ github.com/otiai10/mint v1.3.1 h1:BCmzIS3n71sGfHB5NMNDB3lHYPz8fWSkCAErHed//qc=
+ github.com/pact-foundation/pact-go v1.0.4 h1:OYkFijGHoZAYbOIb1LWXrwKQbMMRUv1oQ89blD2Mh2Q=
+diff --git a/osmomath/go.mod b/osmomath/go.mod
+index 9b0a16046..fae08728b 100644
+--- a/osmomath/go.mod
++++ b/osmomath/go.mod
+@@ -91,9 +91,12 @@ require (
+ 
+ replace (
+ 	// Our cosmos-sdk branch is:  https://github.com/osmosis-labs/cosmos-sdk, current branch: nicolas/backport-cachekv-v15. Direct commit link: https://github.com/osmosis-labs/cosmos-sdk/pull/436/commits/a412f86ebe33f45b6f6350ddf721be834b9b7535
+-	github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
++	// github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
+ 	// use cosmos-compatible protobufs
+ 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+ 	// use grpc compatible with cosmos protobufs
+ 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
+ )
++
++// INDEXER
++replace github.com/cosmos/cosmos-sdk => github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4
+diff --git a/osmomath/go.sum b/osmomath/go.sum
+index b98118f55..0961a13b0 100644
+--- a/osmomath/go.sum
++++ b/osmomath/go.sum
+@@ -44,6 +44,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
+ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+ github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d h1:nalkkPQcITbvhmL4+C4cKA87NW0tfm3Kl9VXRoPywFg=
+ github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4 h1:T0044sYBuX4aIzcUjU9jYOzHHNsKrE48LDw/cft4wjA=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
+ github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
+ github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
+ github.com/VividCortex/gohistogram v1.0.0 h1:6+hBz+qvs0JOrrNhhmR7lFxo5sINxBCGXrdtl/UvroE=
+@@ -311,8 +313,6 @@ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7J
+ github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
+ github.com/onsi/gomega v1.26.0 h1:03cDLK28U6hWvCAns6NeydX3zIm4SF3ci69ulidS32Q=
+ github.com/onsi/gomega v1.26.0/go.mod h1:r+zV744Re+DiYCIPRlYOTxn0YkOLcAnW8k1xXdMPGhM=
+-github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33 h1:0zSPDwqS+32sI/LNDhWlgyPR5KqOhS8ljkMblmwiU5w=
+-github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
+ github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
+ github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
+ github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
+diff --git a/osmoutils/go.mod b/osmoutils/go.mod
+index 9277e1b89..dfdf2a9cd 100644
+--- a/osmoutils/go.mod
++++ b/osmoutils/go.mod
+@@ -134,9 +134,12 @@ require (
+ 
+ replace (
+ 	// Our cosmos-sdk branch is:  https://github.com/osmosis-labs/cosmos-sdk, current branch: nicolas/backport-cachekv-v15. Direct commit link: https://github.com/osmosis-labs/cosmos-sdk/pull/436/commits/a412f86ebe33f45b6f6350ddf721be834b9b7535
+-	github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
++	// github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
+ 	// use cosmos-compatible protobufs
+ 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+ 	// use grpc compatible with cosmos protobufs
+ 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
+ )
++
++// INDEXER
++replace github.com/cosmos/cosmos-sdk => github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4
+diff --git a/osmoutils/go.sum b/osmoutils/go.sum
+index ba4fec691..0e18621d5 100644
+--- a/osmoutils/go.sum
++++ b/osmoutils/go.sum
+@@ -64,6 +64,8 @@ github.com/DataDog/zstd v1.4.1/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t
+ github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
+ github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
+ github.com/Microsoft/go-winio v0.6.0 h1:slsWYD/zyx7lCXoZVlvQrj0hPTM1HI4+v1sIda2yDvg=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4 h1:T0044sYBuX4aIzcUjU9jYOzHHNsKrE48LDw/cft4wjA=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
+ github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 h1:TngWCqHvy9oXAN6lEVMRuU21PR1EtLVZJmdB18Gu3Rw=
+ github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
+ github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
+@@ -610,8 +612,6 @@ github.com/openzipkin/zipkin-go v0.1.6/go.mod h1:QgAqvLzwWbR/WpD4A3cGpPtJrZXNIiJ
+ github.com/openzipkin/zipkin-go v0.2.1/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnhQw8ySjnjRyN4=
+ github.com/openzipkin/zipkin-go v0.2.2/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnhQw8ySjnjRyN4=
+ github.com/ory/dockertest v3.3.5+incompatible h1:iLLK6SQwIhcbrG783Dghaaa3WPzGc+4Emza6EbVUUGA=
+-github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33 h1:0zSPDwqS+32sI/LNDhWlgyPR5KqOhS8ljkMblmwiU5w=
+-github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
+ github.com/otiai10/copy v1.7.0 h1:hVoPiN+t+7d2nzzwMiDHPSOogsWAStewq3TwU05+clE=
+ github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
+ github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
+diff --git a/x/ibc-hooks/go.mod b/x/ibc-hooks/go.mod
+index 0fb0ec86c..5e654d9b8 100644
+--- a/x/ibc-hooks/go.mod
++++ b/x/ibc-hooks/go.mod
+@@ -141,13 +141,19 @@ require (
+ 
+ replace (
+ 	// osmosis-patched wasmd
+-	github.com/CosmWasm/wasmd => github.com/osmosis-labs/wasmd v0.30.0-osmo-v15
++	// github.com/CosmWasm/wasmd => github.com/osmosis-labs/wasmd v0.30.0-osmo-v15
+ 	// Security patch for wasmvm. See https://github.com/CosmWasm/advisories/blob/main/CWAs/CWA-2023-002.md
+ 	github.com/CosmWasm/wasmvm => github.com/CosmWasm/wasmvm v1.1.2
+ 	// dragonberry
+ 	github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
+ 	// Our cosmos-sdk branch is:  https://github.com/osmosis-labs/cosmos-sdk, current branch: nicolas/backport-cachekv-v15. Direct commit link: https://github.com/osmosis-labs/cosmos-sdk/pull/436/commits/a412f86ebe33f45b6f6350ddf721be834b9b7535
+-	github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
++	// github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
+ 	// use cosmos-compatible protobufs
+ 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+ )
++
++// INDEXER
++replace (
++	github.com/CosmWasm/wasmd => github.com/NoahSaso/wasmd v0.30.0-osmo-v15-osmosis-labs-indexer.8
++	github.com/cosmos/cosmos-sdk => github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4
++)
+diff --git a/x/ibc-hooks/go.sum b/x/ibc-hooks/go.sum
+index 53a9e8cc9..289580e60 100644
+--- a/x/ibc-hooks/go.sum
++++ b/x/ibc-hooks/go.sum
+@@ -67,6 +67,10 @@ github.com/DataDog/zstd v1.4.1/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t
+ github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
+ github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
+ github.com/Microsoft/go-winio v0.6.0 h1:slsWYD/zyx7lCXoZVlvQrj0hPTM1HI4+v1sIda2yDvg=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4 h1:T0044sYBuX4aIzcUjU9jYOzHHNsKrE48LDw/cft4wjA=
++github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
++github.com/NoahSaso/wasmd v0.30.0-osmo-v15-osmosis-labs-indexer.8 h1:akX8EcKj3/QmGr9Z4zRFeIOdN5pJO2iXsWPU3jLrpC8=
++github.com/NoahSaso/wasmd v0.30.0-osmo-v15-osmosis-labs-indexer.8/go.mod h1:B1xqYwuCMHiiIRPGrvDVAM7ZZskVaS5rVCAmDhgs1r0=
+ github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 h1:TngWCqHvy9oXAN6lEVMRuU21PR1EtLVZJmdB18Gu3Rw=
+ github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
+ github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
+@@ -633,12 +637,8 @@ github.com/openzipkin/zipkin-go v0.1.6/go.mod h1:QgAqvLzwWbR/WpD4A3cGpPtJrZXNIiJ
+ github.com/openzipkin/zipkin-go v0.2.1/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnhQw8ySjnjRyN4=
+ github.com/openzipkin/zipkin-go v0.2.2/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnhQw8ySjnjRyN4=
+ github.com/ory/dockertest v3.3.5+incompatible h1:iLLK6SQwIhcbrG783Dghaaa3WPzGc+4Emza6EbVUUGA=
+-github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33 h1:0zSPDwqS+32sI/LNDhWlgyPR5KqOhS8ljkMblmwiU5w=
+-github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33/go.mod h1:rlKRjM/YwCU9WFh1wRqE4tDGj41Z4jtEzfcQHZS8bHY=
+ github.com/osmosis-labs/osmosis/osmoutils v0.0.0-20230105184425-1e6fcd979d99 h1:8yYGNa5u8MmFdh+FpZQ7/4jlGABd5XSDfPcENJE9HXs=
+ github.com/osmosis-labs/osmosis/osmoutils v0.0.0-20230105184425-1e6fcd979d99/go.mod h1:K4de+n3DtLdueen98dOzaRXZvqMd8JvigL8O1xW445o=
+-github.com/osmosis-labs/wasmd v0.30.0-osmo-v15 h1:vjbzq9ta/KmQwUM6PcRmrBJuDwILgLbV4POypC1Uhn8=
+-github.com/osmosis-labs/wasmd v0.30.0-osmo-v15/go.mod h1:5fDYJyMXBq6u2iuHqqOTYiZ5NitIOeIW5k7qEXqbwJE=
+ github.com/otiai10/copy v1.7.0 h1:hVoPiN+t+7d2nzzwMiDHPSOogsWAStewq3TwU05+clE=
+ github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
+ github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
