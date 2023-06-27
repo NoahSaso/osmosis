@@ -1,6 +1,8 @@
 package keepers
 
 import (
+	"path/filepath"
+
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -193,12 +195,15 @@ func (appKeepers *AppKeepers) InitNormalKeepers(
 	)
 	appKeepers.AuthzKeeper = &authzKeeper
 
+	homePath := filepath.Join(wasmDir, "..")
+
 	stakingKeeper := stakingkeeper.NewKeeper(
 		appCodec,
 		appKeepers.keys[stakingtypes.StoreKey],
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		appKeepers.GetSubspace(stakingtypes.ModuleName),
+		homePath,
 	)
 	appKeepers.StakingKeeper = &stakingKeeper
 

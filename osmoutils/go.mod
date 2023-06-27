@@ -134,9 +134,12 @@ require (
 
 replace (
 	// Our cosmos-sdk branch is:  https://github.com/osmosis-labs/cosmos-sdk, current branch: nicolas/backport-cachekv-v15. Direct commit link: https://github.com/osmosis-labs/cosmos-sdk/pull/436/commits/a412f86ebe33f45b6f6350ddf721be834b9b7535
-	github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
+	// github.com/cosmos/cosmos-sdk => github.com/osmosis-labs/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33
 	// use cosmos-compatible protobufs
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	// use grpc compatible with cosmos protobufs
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
+
+// INDEXER
+replace github.com/cosmos/cosmos-sdk => github.com/NoahSaso/cosmos-sdk v0.45.1-0.20230426140817-a412f86ebe33-indexer.4
